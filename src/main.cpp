@@ -28,14 +28,14 @@ const char* mqttUser = "YourMqttUsername";
 const char* mqttPassword = "YourMqttPassword";
 const char* mqttTopic = "Alarm/active_zones";
 const char* mqttStateTopic = "Alarm/status";
-const char* mqttControlTopic = "Alarm/control";
+const char* mqttControlTopic = "Alarm/control"; //this topic is used to control the alarm activation, as well as to activate debug data for the alarm protocol - this data was extremely usefull for the development, but is probably irrelevant now
 const char* lwtTopic = "Alarm/lwt";
 const char* birthMessage = "Online";
 const char* lwtMessage = "Offline";
-const char* activeZoneTopic = "Alarm/active_zone_data";
-const char* debugTopic = "Alarm/debug_data";
-const char* logTopic = "Alarm/log";
-const char* teleTopic = "Alarm/tele";
+const char* activeZoneTopic = "Alarm/active_zone_data"; //Topic for debug data
+const char* debugTopic = "Alarm/debug_data"; //Topic for debug data
+const char* logTopic = "Alarm/log"; //Topic where parts of the log are published, like restart reason and some changes to the status
+const char* teleTopic = "Alarm/tele"; //Topic for the telemetry
 
 const char* resetCause;
 
