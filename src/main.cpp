@@ -1,7 +1,7 @@
 // Read active zone from Crow Runner 8/16 Alarm System
 // Pinout: Convert CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a resistor divider or other means. 
 // Then connect clock (CLK) and data (DAT) to GPIO pins D5, D6 for Esp8266
-// Also connect crow NEG to Esp8266 GND (pin 6)
+// Also connect crow NEG to Esp8266 GND
 
 #include <Arduino.h>
 #include <deque>
