@@ -396,11 +396,14 @@ void loop() {
     unsigned long seconds = uptimeMillis / 1000;
     unsigned long minutes = seconds / 60;
     unsigned long hours = minutes / 60;
+    unsigned long days = hours / 24; // Calculate days
     seconds %= 60;
     minutes %= 60;
-    // Create a formatted string in HH:MM:SS format
-    char uptimeStr[12]; // Format: HH:MM:SS\0
-    sprintf(uptimeStr, "%02lu:%02lu:%02lu", hours, minutes, seconds);
+    hours %= 24; // Ensure hours don't exceed 24
+
+    // Create a formatted string in DDd HH:MM:SS format
+    char uptimeStr[20]; // Format: DDd HH:MM:SS\0
+    sprintf(uptimeStr, "%luD %02lu:%02lu:%02lu", days, hours, minutes, seconds);
     // Create a JSON object
     StaticJsonDocument<128> jsonDoc;
     // Add the uptime, RSSI and IP values to the JSON object
