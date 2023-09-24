@@ -176,8 +176,12 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           }
         }
         publishStatus(status);
-        EEPROM.put(statusAddress, status);
-        EEPROM.commit(); // Commit the changes to EEPROM
+        //prevent unnecessary writting to flash
+        EEPROM.get(statusAddress, statussaved);
+        if (statussaved != status) {
+          EEPROM.put(statusAddress, status);
+          EEPROM.commit(); // Commit the changes to EEPROM
+        }
       }
       if (activeZoneDetected && zonedata) {
         String hexValue = "";
