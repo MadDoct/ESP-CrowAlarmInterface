@@ -139,6 +139,11 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             Serial.print(message);
             Serial.println();
             activeZoneDetected = true;
+            if (status != 0) { //If the status didn't get updated somehow to disarmed, this ensures it
+              status = 0;
+              EEPROM.put(statusAddress, status);
+              EEPROM.commit(); // Commit the changes to EEPROM
+            }
           }
         }
         for (unsigned int i = inicio + 32; i < inicio + 40; i++) { //when the alarm is triggered, the triggered zone is in these bits
