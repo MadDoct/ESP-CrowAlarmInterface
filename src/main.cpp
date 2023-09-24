@@ -127,7 +127,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
       int aarmar = inicio + 31;
       int total = inicio + 48;
       int parcial = inicio + 56;
-      if (buffer[armado] == 1) {  //bit 63 is 0 when fully armed
+      if (buffer[armado] == 1) {  //bit 63 is 1 when the messages report the zones and not status changes
         if (buffer[multiplic] == 0) {  //bit 16 is 0 when the the active zones are from 9 to 16
           multiplicador = 8; //so you must add 8 to the index number to get the actual zone
           }
