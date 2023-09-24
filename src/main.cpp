@@ -309,6 +309,7 @@ void setup() {
     } else {
       status = statussaved;
     }
+    Serial.println();
     Serial.println("Status recuperado da EEPROM");
   }
 
