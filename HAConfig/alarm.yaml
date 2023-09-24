@@ -1,0 +1,29 @@
+- name: "Alarm"
+  unique_id: crowalarm
+  code_arm_required: false
+  state_topic: Alarm/status
+  value_template: >-
+    {% if value == "Desarmado" %} disarmed
+    {% elif value == "Armado Total" %} armed_away
+    {% elif value == "Armado Parcial" %} armed_night
+    {% elif value == "A armar Total" %} arming
+    {% elif value == "A armar Parcial" %} arming
+    {% elif value == "Alarme Despoletado" %} triggered
+    {% else %} disarmed
+    {% endif %}
+  command_topic: Alarm/control
+  command_template: >-
+    {% if action == "DISARM" %}
+      {% if is_state("alarm_control_panel.alarm", "armed_away") %} total
+      {% elif is_state("alarm_control_panel.alarm", "armed_night") %} parcial
+      {% elif is_state("alarm_control_panel.alarm", "triggered") %} total
+      {% endif %}
+    {% elif action == "ARM_AWAY" %} total
+    {% elif action == "ARM_NIGHT" %} parcial
+    {% else %} failed
+    {% endif %}
+  code: 1234
+  availability_topic: "Alarm/lwt"
+  payload_available: "Online"
+  payload_not_available: "Offline"
+  json_attributes_topic: "Alarm/tele"
