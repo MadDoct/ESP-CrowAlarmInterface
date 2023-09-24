@@ -71,7 +71,7 @@ void activatePin(int pin, unsigned long duration) {
   while (millis() - lastActivationTime < duration) {
     // Wait for the specified duration
     ESP.wdtFeed();
-    delay(200);
+    yield();
   }
   digitalWrite(pin, LOW);
 }
