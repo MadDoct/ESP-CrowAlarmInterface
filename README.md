@@ -12,6 +12,6 @@ I had some help from ChatGPT, but to be truthfull it made a LOT of mistakes and 
 Some strings are in Portuguese - my native language - sorry for that. I will probably "correct" that in the future.
 
 Pinout: Converted CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a resistor divider. 
-Then connected clock (CLK) and data (DAT) to GPIO pins D5, D6 for Esp8266
-Also connected crow NEG to Esp8266 GND
-Pins D1, D2 and D7 are connected to relays that get activated for 1 second, activating/disarming the alarm by simulating keyswitches (refer to the alarm manual on how to use this)
+Then connected clock (CLK) and data (DAT) to GPIO pins D5, D6 for Esp8266.
+Also connected crow NEG to Esp8266 GND.
+Pins D1, D2 and D7 are connected to relays that get activated for 1 second, activating/disarming the alarm by simulating keyswitches (refer to the alarm manual on how to use this).
