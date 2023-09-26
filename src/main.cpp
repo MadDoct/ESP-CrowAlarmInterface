@@ -54,7 +54,7 @@ bool zonedata = false;
 std::deque<int> dataBuffer;
 int insideState = 1;
 int boundaryAge = 0;
-int boundary[boundaryLen] = {1, 0, 0, 0, 0, 0, 0, 1};
+int boundary[boundaryLen] = {0, 1, 1, 1, 1, 1, 1, 0};
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -127,12 +127,12 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
       int aarmar = inicio + 31;
       int total = inicio + 48;
       int parcial = inicio + 56;
-      if (buffer[armado] == 1) {  //bit 63 is 1 when the messages report the zones and not status changes
-        if (buffer[multiplic] == 0) {  //bit 16 is 0 when the the active zones are from 9 to 16
+      if (buffer[armado] == 0) {  //bit 63 is 0 when the messages report the zones and not status changes
+        if (buffer[multiplic] == 1) {  //bit 16 is 1 when the the active zones are from 9 to 16
           multiplicador = 8; //so you must add 8 to the index number to get the actual zone
           }
         for (unsigned int i = inicio + 24; i < inicio + 32; i++) {
-          if (buffer[i] == 0) {
+          if (buffer[i] == 1) {
             char message[20];
             snprintf(message, sizeof(message), "%d activo", i - inicio - 23 + multiplicador);
             client.publish(mqttTopic, message);
@@ -142,7 +142,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           }
         }
         for (unsigned int i = inicio + 32; i < inicio + 40; i++) { //when the alarm is triggered, the triggered zone is in these bits
-          if (buffer[i] == 0) {
+          if (buffer[i] == 1) {
             char message[20];
             snprintf(message, sizeof(message), "%d triggered", i - inicio - 31 + multiplicador);
             client.publish(mqttTopic, message);
@@ -155,11 +155,11 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           }
         }
       } else {
-        if (buffer[total] == 1 && buffer[parcial] == 1) { //if both are not 0 the alarm is being disarmed
+        if (buffer[total] == 0 && buffer[parcial] == 0) { //if both are not 1 the alarm is being disarmed
           status = 0;
           Serial.println("Desarmado");
-        } else if (buffer[parcial] == 0) { //bit 56 is 0 when the alarm is armed partially and 1 if totally
-          if (buffer[aarmar] == 0) { //bit 31 is 0 when the alarm is being armed (the keypad is chimming))
+        } else if (buffer[parcial] == 1) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
+          if (buffer[aarmar] == 1) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
             Serial.println("A armar Parcial");
             status = 5;
           } else {
@@ -167,7 +167,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             status = 2;
           }
         } else {
-          if (buffer[aarmar] == 0) {
+          if (buffer[aarmar] == 1) {
             Serial.println("A armar Total");
             status = 4;
           } else {
@@ -182,6 +182,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           EEPROM.put(statusAddress, status);
           EEPROM.commit(); // Commit the changes to EEPROM
         }
+        
       }
       if (activeZoneDetected && zonedata) {
         String hexValue = "";
@@ -199,7 +200,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
 }
 
 void IRAM_ATTR clockCallback() {
-  int dbit = digitalRead(dataPin) == LOW ? 1 : 0;
+  int dbit = digitalRead(dataPin);
   dataBuffer.push_back(dbit);
 
   if (dataBuffer.size() > bufferSize) {
@@ -210,11 +211,11 @@ void IRAM_ATTR clockCallback() {
 
   int lastIndex = bufferSize - 1;
 
-  if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 1 && 
-      dataBuffer[lastIndex - 1] == 0 && dataBuffer[lastIndex - 2] == 0 && 
-      dataBuffer[lastIndex - 3] == 0 && dataBuffer[lastIndex - 4] == 0 && 
-      dataBuffer[lastIndex - 5] == 0 && dataBuffer[lastIndex - 6] == 0 && 
-      dataBuffer[lastIndex - 7] == 1) {
+  if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 0 && 
+      dataBuffer[lastIndex - 1] == 1 && dataBuffer[lastIndex - 2] == 1 && 
+      dataBuffer[lastIndex - 3] == 1 && dataBuffer[lastIndex - 4] == 1 && 
+      dataBuffer[lastIndex - 5] == 1 && dataBuffer[lastIndex - 6] == 1 && 
+      dataBuffer[lastIndex - 7] == 0) {
     if (insideState == 1) {
       printBuffer(dataBuffer, boundaryAge + boundaryLen);
     }
@@ -428,6 +429,4 @@ void loop() {
   }
 
   // Other non-blocking tasks can go here
-  // Add a 10ms delay at the end of the loop
-//  delay(10);
 }
