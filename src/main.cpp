@@ -100,8 +100,8 @@ void publishStatus(byte estado) {
 }
 
 void printBuffer(const std::deque<int>& buffer, unsigned int length) {
-  unsigned int inicio = buffer.size() - length;
   if (buffer.size() >= length) {
+    unsigned int inicio = buffer.size() - length;
     for (unsigned int i = inicio; i < buffer.size(); i++) {
       Serial.print(buffer[i]);
     }
