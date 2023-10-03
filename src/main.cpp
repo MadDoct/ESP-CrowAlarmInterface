@@ -55,6 +55,7 @@ std::deque<int> dataBuffer;
 int insideState = 1;
 int boundaryAge = 0;
 int boundary[boundaryLen] = {0, 1, 1, 1, 1, 1, 1, 0};
+bool cansend = false;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -102,23 +103,68 @@ void publishStatus(byte estado) {
 void printBuffer(const std::deque<int>& buffer, unsigned int length) {
   if (buffer.size() >= length) {
     unsigned int inicio = buffer.size() - length;
-    for (unsigned int i = inicio; i < buffer.size(); i++) {
-      Serial.print(buffer[i]);
-    }
-    Serial.println();
-
-    if (debugalarme) {
+    // Process the buffer to remove bit stuffing
+    if (length % 8 != 0) {
+      std::deque<int> unstuffedBuffer;
+      int consecutiveOnes = 0;
+      Serial.println("Unstuffed:");
+      
+      for (unsigned int i = inicio; i < buffer.size(); i++) {
+        int bit = buffer[i];
+        if (bit == 0 && consecutiveOnes != 5) {
+          consecutiveOnes = 0;
+          unstuffedBuffer.push_back(bit);
+          Serial.print(buffer[i]);
+        }
+        if (bit == 1) {
+          consecutiveOnes++;
+          unstuffedBuffer.push_back(bit);
+          Serial.print(buffer[i]);
+        }
+      }
+      
+      Serial.println();
+      if (debugalarme) {
       String hexValue = "";
-      for (unsigned int i = inicio; i < buffer.size(); i += 8) {
+      for (unsigned int i = 0; i < unstuffedBuffer.size(); i += 8) {
         int value = 0;
         for (int j = 0; j < 8; j++) {
-          value |= (buffer[i + j] << (7 - j));
+            value |= (unstuffedBuffer[i + j] << (7 - j));
         }
-        hexValue += String(value, HEX);
+        // Pad the hexadecimal value with leading zeros to ensure it always has 2 characters
+        String hexByte = String(value, HEX);
+        if (hexByte.length() == 1) {
+            hexByte = "0" + hexByte; // Add a leading zero if necessary
+        }
+        hexValue += hexByte;
       }
       client.publish(debugTopic, hexValue.c_str());
+      }
+
+    } else {
+      for (unsigned int i = inicio; i < buffer.size(); i++) {
+        Serial.print(buffer[i]);
+      }
+      Serial.println();
+
+      if (debugalarme) {
+        String hexValue = "";
+        for (unsigned int i = inicio; i < buffer.size(); i += 8) {
+          int value = 0;
+          for (int j = 0; j < 8; j++) {
+              value |= (buffer[i + j] << (7 - j));
+          }
+          // Pad the hexadecimal value with leading zeros to ensure it always has 2 characters
+          String hexByte = String(value, HEX);
+          if (hexByte.length() == 1) {
+              hexByte = "0" + hexByte; // Add a leading zero if necessary
+          }
+          hexValue += hexByte;
+        }
+        client.publish(debugTopic, hexValue.c_str());
+      }
     }
-    
+
     if (length == 72) {
       bool activeZoneDetected = false;
       int multiplicador = 0;
@@ -189,9 +235,14 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
         for (unsigned int i = inicio; i < buffer.size(); i += 8) {
           int value = 0;
           for (int j = 0; j < 8; j++) {
-            value |= (buffer[i + j] << (7 - j));
+              value |= (buffer[i + j] << (7 - j));
           }
-          hexValue += String(value, HEX);
+          // Pad the hexadecimal value with leading zeros to ensure it always has 2 characters
+          String hexByte = String(value, HEX);
+          if (hexByte.length() == 1) {
+              hexByte = "0" + hexByte; // Add a leading zero if necessary
+          }
+          hexValue += hexByte;
         }
         client.publish(activeZoneTopic, hexValue.c_str());
       }
@@ -211,6 +262,17 @@ void IRAM_ATTR clockCallback() {
 
   int lastIndex = bufferSize - 1;
 
+  if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 1 && 
+      dataBuffer[lastIndex - 1] == 1 && dataBuffer[lastIndex - 2] == 1 && 
+      dataBuffer[lastIndex - 3] == 1 && dataBuffer[lastIndex - 4] == 1 && 
+      dataBuffer[lastIndex - 5] == 1 && dataBuffer[lastIndex - 6] == 1 && 
+      dataBuffer[lastIndex - 7] == 1 && dataBuffer[lastIndex - 8] == 1 && 
+      dataBuffer[lastIndex - 9] == 1 && insideState == 0) {
+    cansend = true;
+  } else {
+    cansend = false;
+  }
+
   if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 0 && 
       dataBuffer[lastIndex - 1] == 1 && dataBuffer[lastIndex - 2] == 1 && 
       dataBuffer[lastIndex - 3] == 1 && dataBuffer[lastIndex - 4] == 1 && 
@@ -229,41 +291,140 @@ void IRAM_ATTR clockCallback() {
   }
 }
 
+// Function to send a packet to the alarm system
+void sendPacket(String binaryString) {
+  // stop receiving
+  //detachInterrupt(digitalPinToInterrupt(clockPin));
+  // Ensure dataPin is set as an output
+  while (cansend == false) {
+      delayMicroseconds(100);
+      yield();
+    }
+  pinMode(dataPin, OUTPUT);
+
+  size_t bitLength = binaryString.length();
+
+  for (size_t i = 0; i < bitLength; i++) {
+    char bitChar = binaryString.charAt(i);
+    byte bitValue = bitChar == '1' ? 1 : 0;
+  
+    // Wait for the clock to be low
+    while (digitalRead(clockPin) != LOW) {
+      delayMicroseconds(10);
+    }
+
+    // Set the data line (dataPin) to the current bit value
+    digitalWrite(dataPin, bitValue);
+
+    // Wait for the clock to go high
+    while (digitalRead(clockPin) != HIGH) {
+      delayMicroseconds(10);
+    }
+  }
+
+  // Wait for the clock to be low before ending transmission
+  while (digitalRead(clockPin) != LOW) {
+    delayMicroseconds(10);
+  }
+
+  // send a final 0
+  digitalWrite(dataPin, LOW);
+    // Wait for the clock to go high
+  while (digitalRead(clockPin) != HIGH) {
+    delayMicroseconds(10);
+  }
+
+  while (digitalRead(clockPin) != LOW) {
+    delayMicroseconds(10);
+  }
+
+  // Insure data line stays high
+  digitalWrite(dataPin, HIGH);
+    // Wait for the clock to go high
+  while (digitalRead(clockPin) != HIGH) {
+    delayMicroseconds(10);
+  }
+  
+  pinMode(dataPin, INPUT);
+  //restart receiving
+  //attachInterrupt(digitalPinToInterrupt(clockPin), clockCallback, FALLING);
+  delay(1);
+}
+
+
+//funtion to send keypad button presses
+void sendBinaryPacket(int decimalNumber) {
+  String reversedBinary = "";
+
+  // Convert decimal to binary and reverse the bits
+  for (int i = 0; i < 8; i++) {  // Assuming 8-bit binary representation
+    reversedBinary += (decimalNumber & 1) ? '1' : '0';
+    decimalNumber >>= 1;
+  }
+
+  // Add leading and trailing bits
+  reversedBinary = "011111101000010100000000" + reversedBinary + "01111110";
+  sendPacket(reversedBinary);
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
   payload[length] = '\0';
   String receivedPayload = String((char*)payload);
   
-  if (receivedPayload == "parcial") {
-    client.publish(logTopic, "Activada Guarda Parcial");
-    activatePin(parcialPin, 1000);
-  } else if (receivedPayload == "total") {
-    client.publish(logTopic, "Activada Guarda Total");
-    activatePin(totalPin, 1000);
-  } else if (receivedPayload == "alarme") {
-    client.publish(logTopic, "Alarme despoletado activamente");
-    activatePin(alarmePin, 1000);
-  } else if (receivedPayload == "debugon") {
-    client.publish(logTopic, "Debug on!");
-    Serial.println("Debug on!");
-    debugalarme = true;
-  } else if (receivedPayload == "debugoff") {
-    client.publish(logTopic, "Debug off!");
-    Serial.println("Debug off!");
-    debugalarme = false;
-    zonedata = false;
-  } else if (receivedPayload == "zonedataon") {
-    client.publish(logTopic, "Dados da zona on!");
-    Serial.println("Dados da zona on!");
-    zonedata = true;
-  } else if (receivedPayload == "zonedataoff") {
-    client.publish(logTopic, "Dados da zona off!");
-    Serial.println("Dados da zona off!");
-    zonedata = false;
-  } else if (receivedPayload == "restart") {
-    client.publish(logTopic, "A reiniciar...");
-    Serial.println("Restart..");
-    delay(1000);
-    ESP.restart();
+  if (strcmp(topic, mqttControlTopic) == 0) {
+    if (receivedPayload == "parcialpin") {
+      client.publish(logTopic, "Activada Guarda Parcial");
+      activatePin(parcialPin, 1000);
+    } else if (receivedPayload == "totalpin") {
+      client.publish(logTopic, "Activada Guarda Total");
+      activatePin(totalPin, 1000);
+    } else if (receivedPayload == "alarmepin") {
+      client.publish(logTopic, "Alarme despoletado activamente");
+      activatePin(alarmePin, 1000);
+    } else if (receivedPayload == "parcial") {
+      client.publish(logTopic, "Activada Guarda Parcial");
+      sendBinaryPacket(14);
+    } else if (receivedPayload == "total") {
+      client.publish(logTopic, "Activada Guarda Total");
+      sendBinaryPacket(13);
+    } else if (receivedPayload == "alarme") {
+      client.publish(logTopic, "Alarme despoletado activamente");
+      sendBinaryPacket(32);
+    //receive the code after "desarmar-" or "desarmar " and send it to the alarm to deactivate it
+    } else if (receivedPayload.startsWith("desarmar-") || receivedPayload.startsWith("desarmar ")) {
+      String digits = receivedPayload.substring(9); // Get the digits after "desarmar-"
+      for (size_t i = 0; i < digits.length(); i++) {
+        char digitChar = digits.charAt(i);
+        if (isdigit(digitChar)) {
+          int digit = digitChar - '0'; // Convert char to integer
+          sendBinaryPacket(digit);
+        }
+      }
+      sendBinaryPacket(17); //Send "enter" at the end
+      client.publish(logTopic, "Desarmado");
+    } else if (receivedPayload == "debugon") {
+      client.publish(logTopic, "Debug on!");
+      Serial.println("Debug on!");
+      debugalarme = true;
+    } else if (receivedPayload == "debugoff") {
+      client.publish(logTopic, "Debug off!");
+      Serial.println("Debug off!");
+      debugalarme = false;
+      zonedata = false;
+    } else if (receivedPayload == "zonedataon") {
+      client.publish(logTopic, "Dados da zona on!");
+      Serial.println("Dados da zona on!");
+      zonedata = true;
+    } else if (receivedPayload == "zonedataoff") {
+      client.publish(logTopic, "Dados da zona off!");
+      Serial.println("Dados da zona off!");
+      zonedata = false;
+    } else if (receivedPayload == "restart") {
+      client.publish(logTopic, "A reiniciar...");
+      Serial.println("Restart..");
+      delay(1000);
+      ESP.restart();
+    }
   }
 }
 
@@ -326,13 +487,13 @@ void setup() {
   
   delay(2000);
 
+  WiFi.persistent(true);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
-  WiFi.setAutoReconnect(true);
-  WiFi.persistent(true);
+  //WiFi.setAutoReconnect(true);
   Serial.println("Connected to WiFi");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
@@ -389,6 +550,9 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     // Perform your action here at the specified interval
     ESP.wdtFeed();
+    if (WiFi.status() != WL_CONNECTED) {
+        WiFi.reconnect();
+    }
     previousMillis = currentMillis;
   }
 
