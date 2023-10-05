@@ -17,4 +17,8 @@ Pinout: Initially converted CROW 5V clock (CLK) and data (DAT) keypad signals to
 Also connected crow NEG to Esp8266 GND.
 Pins D1, D2 and D7 can be connected to relays that get activated for 1 second, activating/disarming the alarm by simulating keyswitches (refer to the alarm manual on how to use this), if you rather use this than instead of the bus communication.
 
+There are 2 different config files for Home Assistant that use MQTT Alarm Control Panel integration - https://www.home-assistant.io/integrations/alarm_control_panel.mqtt/ - in the folder HAConfig:
+- alarm-bus.yaml should be used in case you are using the bus to control the alarm (with logic level converters);
+- alarm-keyswitch.yaml should be used in case you are using the keyswitches to control the alarm (with voltage dividers and relays simulating keyswitches).
+
 DISCLAIMER: This has been tested in my alarm and probably works with all the alarms of the same model, but due to possible differences in firmware or configuration of the alarm, your mileage may vary...
