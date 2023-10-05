@@ -16,12 +16,12 @@ mqtt:
       command_topic: Alarm/control
       command_template: >-
         {% if action == "DISARM" %}
-          {% if is_state("alarm_control_panel.alarm", "armed_away") %} total
-          {% elif is_state("alarm_control_panel.alarm", "armed_night") %} parcial
-          {% elif is_state("alarm_control_panel.alarm", "triggered") %} total
+          {% if is_state("alarm_control_panel.alarm", "armed_away") %} totalpin
+          {% elif is_state("alarm_control_panel.alarm", "armed_night") %} parcialpin
+          {% elif is_state("alarm_control_panel.alarm", "triggered") %} totalpin
           {% endif %}
-        {% elif action == "ARM_AWAY" %} total
-        {% elif action == "ARM_NIGHT" %} parcial
+        {% elif action == "ARM_AWAY" %} totalpin
+        {% elif action == "ARM_NIGHT" %} parcialpin
         {% else %} failed
         {% endif %}
       code: 1234
