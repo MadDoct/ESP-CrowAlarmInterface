@@ -56,8 +56,9 @@ bool zonedata = false;
 std::deque<int> dataBuffer;
 int insideState = 1;
 int boundaryAge = 0;
-int boundary[boundaryLen] = {0, 1, 1, 1, 1, 1, 1, 0};
 bool cansend = false;
+// Define the size of the binary array in bytes
+const int binarySizeBytes = 1;  // 8 bits
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -294,33 +295,32 @@ void IRAM_ATTR clockCallback() {
 }
 
 // Function to send a packet to the alarm system
-void sendPacket(String binaryString) {
-  // stop receiving
+void sendPacket(const byte* binaryData, size_t dataSize) {
+  // Stop receiving
   //detachInterrupt(digitalPinToInterrupt(clockPin));
   // Ensure dataPin is set as an output
-  while (cansend == false) {
-      delayMicroseconds(100);
-      yield();
-    }
+  while (!cansend) {
+    delayMicroseconds(100);
+    yield();
+  }
   pinMode(dataPin, OUTPUT);
 
-  size_t bitLength = binaryString.length();
+  for (size_t i = 0; i < dataSize; i++) {
+    byte currentByte = binaryData[i];
 
-  for (size_t i = 0; i < bitLength; i++) {
-    char bitChar = binaryString.charAt(i);
-    byte bitValue = bitChar == '1' ? 1 : 0;
-  
-    // Wait for the clock to be low
-    while (digitalRead(clockPin) != LOW) {
-      delayMicroseconds(10);
-    }
+    for (int bit = 7; bit >= 0; bit--) {
+      // Wait for the clock to be low
+      while (digitalRead(clockPin) != LOW) {
+        delayMicroseconds(10);
+      }
 
-    // Set the data line (dataPin) to the current bit value
-    digitalWrite(dataPin, bitValue);
+      // Set the data line (dataPin) to the current bit value
+      digitalWrite(dataPin, (currentByte >> bit) & 1);
 
-    // Wait for the clock to go high
-    while (digitalRead(clockPin) != HIGH) {
-      delayMicroseconds(10);
+      // Wait for the clock to go high
+      while (digitalRead(clockPin) != HIGH) {
+        delayMicroseconds(10);
+      }
     }
   }
 
@@ -329,9 +329,10 @@ void sendPacket(String binaryString) {
     delayMicroseconds(10);
   }
 
-  // send a final 0
+  // Send a final 0
   digitalWrite(dataPin, LOW);
-    // Wait for the clock to go high
+
+  // Wait for the clock to go high
   while (digitalRead(clockPin) != HIGH) {
     delayMicroseconds(10);
   }
@@ -340,33 +341,44 @@ void sendPacket(String binaryString) {
     delayMicroseconds(10);
   }
 
-  // Insure data line stays high
+  // Ensure data line stays high
   digitalWrite(dataPin, HIGH);
-    // Wait for the clock to go high
+
+  // Wait for the clock to go high
   while (digitalRead(clockPin) != HIGH) {
     delayMicroseconds(10);
   }
-  
+
   pinMode(dataPin, INPUT);
-  //restart receiving
+
+  // Restart receiving
   //attachInterrupt(digitalPinToInterrupt(clockPin), clockCallback, FALLING);
   delay(1);
 }
 
-
-//funtion to send keypad button presses
+// Function to send keypad button presses
 void sendBinaryPacket(int decimalNumber) {
-  String reversedBinary = "";
+  byte binaryArray[binarySizeBytes + 4];  // 8 bits + leading/trailing bytes
+
+  // Initialize the binary array
+  memset(binaryArray, 0, sizeof(binaryArray));
+
+  // Add leading bytes
+  binaryArray[0] = 0b01111110;
+  binaryArray[1] = 0b10000101;
+  binaryArray[2] = 0b00000000;
 
   // Convert decimal to binary and reverse the bits
-  for (int i = 0; i < 8; i++) {  // Assuming 8-bit binary representation
-    reversedBinary += (decimalNumber & 1) ? '1' : '0';
+  for (int i = 0; i < 8; i++) {
+    binaryArray[3] |= ((decimalNumber & 1) ? 1 : 0) << (7 - i);
     decimalNumber >>= 1;
   }
 
-  // Add leading and trailing bits
-  reversedBinary = "011111101000010100000000" + reversedBinary + "01111110";
-  sendPacket(reversedBinary);
+  // Add trailing byte
+  binaryArray[4] = 0b01111110;  // Trailing byte
+
+  // Send the constructed binary data
+  sendPacket(binaryArray, binarySizeBytes + 4);
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -385,15 +397,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
       activatePin(alarmePin, 1000);
     } else if (receivedPayload == "parcial") {
       client.publish(logTopic, "Activada Guarda Parcial");
+      sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
       sendBinaryPacket(14);
     } else if (receivedPayload == "total") {
       client.publish(logTopic, "Activada Guarda Total");
+      sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
       sendBinaryPacket(13);
     } else if (receivedPayload == "alarme") {
       client.publish(logTopic, "Alarme despoletado activamente");
+      sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
       sendBinaryPacket(32);
     //receive the code after "desarmar-" or "desarmar " and send it to the alarm to deactivate it
     } else if (receivedPayload.startsWith("desarmar-") || receivedPayload.startsWith("desarmar ")) {
+      sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
       String digits = receivedPayload.substring(9); // Get the digits after "desarmar-"
       for (size_t i = 0; i < digits.length(); i++) {
         char digitChar = digits.charAt(i);
@@ -495,10 +511,12 @@ void setup() {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
-  //WiFi.setAutoReconnect(true);
+  WiFi.setAutoReconnect(true);
   Serial.println("Connected to WiFi");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
+  Serial.print("RSSI: ");
+  Serial.println(WiFi.RSSI());
 
   client.setServer(mqttServer, mqttPort);
   while (!client.connected()) {
@@ -540,6 +558,7 @@ void loop() {
       unsigned long retryDelay = 5000;
       while (millis() - previousMillis < retryDelay) {
         // Wait for the retryDelay
+        yield();
       }
       previousMillis = millis();
       return;
@@ -552,16 +571,12 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     // Perform your action here at the specified interval
     ESP.wdtFeed();
-    if (WiFi.status() != WL_CONNECTED) {
-        WiFi.reconnect();
-    }
     previousMillis = currentMillis;
   }
 
   if (millis() - previousMillistele >= intervaltele) {
     // Perform your action here at the specified interval in intervaltele
     // send tele values
-
     // Calculate uptime in milliseconds
     unsigned long uptimeMillis = millis() - startupTime;
     // Convert milliseconds to HH:MM:SS format
