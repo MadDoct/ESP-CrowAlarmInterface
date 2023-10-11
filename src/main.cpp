@@ -62,6 +62,7 @@ const int binarySizeBytes = 1;  // 8 bits
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+bool otaInProgress = false;
 
 unsigned long previousMillis = 0;
 unsigned long previousMillistele = 0;
@@ -220,6 +221,10 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
 }
 
 void IRAM_ATTR clockCallback() {
+  // Check if OTA update is in progress, and disable the interrupt if it is
+  if (otaInProgress) {
+    return;
+  }
   int dbit = digitalRead(dataPin);
   dataBuffer.push_back(dbit);
 
@@ -369,15 +374,19 @@ void sendBinaryPacket(int decimalNumber) {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
+  // Check if OTA update is in progress, and disable the interrupt if it is
+  if (otaInProgress) {
+    return;
+  }
   payload[length] = '\0';
   String receivedPayload = String((char*)payload);
   
   if (strcmp(topic, mqttControlTopic) == 0) {
     if (receivedPayload == "parcialpin") {
-      client.publish(logTopic, "Activada Guarda Parcial");
+      client.publish(logTopic, "Activado Keyswitch da Guarda Parcial");
       activatePin(parcialPin, 1000);
     } else if (receivedPayload == "totalpin") {
-      client.publish(logTopic, "Activada Guarda Total");
+      client.publish(logTopic, "Activado Keyswitch da Guarda Total");
       activatePin(totalPin, 1000);
     } else if (receivedPayload == "alarmepin") {
       client.publish(logTopic, "Alarme despoletado activamente");
@@ -528,6 +537,27 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(clockPin), clockCallback, FALLING);
 
   client.setCallback(callback);
+
+  // Initialize OTA
+  ArduinoOTA.onStart([]() {
+    otaInProgress = true;
+    Serial.println("OTA update started...");
+  });
+  ArduinoOTA.onEnd([]() {
+    otaInProgress = false;
+    Serial.println("\nOTA update finished!");
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("OTA Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("OTA authentication failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("OTA begin failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("OTA connect failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("OTA receive failed");
+    else if (error == OTA_END_ERROR) Serial.println("OTA end failed");
+  });
+
+  // Start OTA
+  ArduinoOTA.begin();
 }
 
 void loop() {
@@ -597,4 +627,6 @@ void loop() {
   }
 
   // Other non-blocking tasks can go here
+  // Handle OTA updates
+  ArduinoOTA.handle();
 }
