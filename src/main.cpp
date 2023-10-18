@@ -11,6 +11,7 @@
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
+#include <ArduinoOTA.h>
 
 #define WDT_TIMEOUT_S 8 // Set the WDT timeout to 8 seconds
 
