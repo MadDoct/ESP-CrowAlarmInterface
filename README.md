@@ -5,7 +5,7 @@ Based on https://github.com/sivann/crowalarm - thanks to sivann for figuring out
 In the meantime, upon further research, I found out that the alarm uses HDLC-like as the communication protocol and adapted accordingly (removed the bit invertion that was done based on sivann's implementation - I still don't know why he did it).
 
 I started from his work, adapted it to C++/arduino sketch for usage with an ESP8266 (and changed it to reflect the actual communication protocol - akin to HDLC).
-So it now it has:
+So it now has:
 - reporting/control using MQTT.
 - extended zone reporting for upto 16 zones.
 - ability to report the alarm status, including the zone that triggered the alarm.
