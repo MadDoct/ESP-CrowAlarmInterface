@@ -5,11 +5,15 @@ Based on https://github.com/sivann/crowalarm - thanks to sivann for figuring out
 In the meantime, upon further research, I found out that the alarm uses HDLC-like as the communication protocol and adapted accordingly (removed the bit invertion that was done based on sivann's implementation - I still don't know why he did it).
 
 I started from his work, adapted it to C++/arduino sketch for usage with an ESP8266 (and changed it to reflect the actual communication protocol - akin to HDLC).
-That allowed me to add reporting/control using MQTT.
-I then figured out how to extend the zone reporting for upto 16 zones and added the ability to report the alarm status, including the zone that triggered the alarm.
-I also added the possibility to activate 3 relays to activate/deactivate the alarm by simulating keyswitches.
-Finally I was able to implement bidirectional communication, so now it's possible to activate and deactivate the alarm just by using the bus without keyswitches.
-It now has OTA updates using ArduinoOTA.
+So it now it has:
+- reporting/control using MQTT.
+- extended zone reporting for upto 16 zones.
+- ability to report the alarm status, including the zone that triggered the alarm.
+- possibility to activate 3 relays to activate/deactivate the alarm by simulating keyswitches.
+- bidirectional communication:
+  - now it's possible to activate and deactivate the alarm just by using the bus without keyswitches.
+- OTA updates using ArduinoOTA.
+
 I had some help from ChatGPT, but to be truthfull it made a LOT of mistakes and it took me an absurdely long time to correct the parts of the code it provided and find out its mistakes...
 
 Some strings are in Portuguese - my native language - sorry for that. I will probably "correct" that in the future.
