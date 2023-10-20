@@ -49,13 +49,14 @@ const int totalPin = D2;
 const int alarmePin = D7;
 
 const int boundaryLen = 8;
-const int bufferSize = 200;
+const int bufferSize = 128;
 
 bool debugalarme = false;
 bool zonedata = false;
 
 std::deque<int> dataBuffer;
 int insideState = 1;
+int consecutiveOnes = 0;
 int boundaryAge = 0;
 bool cansend = false;
 // Define the size of the binary array in bytes
@@ -227,13 +228,21 @@ void IRAM_ATTR clockCallback() {
     return;
   }
   int dbit = digitalRead(dataPin);
-  dataBuffer.push_back(dbit);
+  if (dbit == 1) {
+    dataBuffer.push_back(dbit);
+    boundaryAge++;
+    consecutiveOnes++;
+  } else if (dbit == 0 && consecutiveOnes == 5) {
+    consecutiveOnes = 0;
+  } else {
+    dataBuffer.push_back(dbit);
+    boundaryAge++;
+    consecutiveOnes = 0;
+  }
 
   if (dataBuffer.size() > bufferSize) {
     dataBuffer.pop_front();
   }
-
-  boundaryAge++;
 
   int lastIndex = bufferSize - 1;
 
@@ -255,27 +264,7 @@ void IRAM_ATTR clockCallback() {
       dataBuffer[lastIndex - 7] == 0) {
     if (insideState == 1) {
       int messagesize = boundaryAge + boundaryLen;
-      if (messagesize % 8 != 0) {
-        std::deque<int> unstuffedBuffer;
-        int consecutiveOnes = 0;
-        unsigned int inicial = dataBuffer.size() - messagesize;
-        for (unsigned int i = inicial; i < dataBuffer.size(); i++) {
-          int bit = dataBuffer[i];
-          if (bit == 0 && consecutiveOnes != 5) {
-            consecutiveOnes = 0;
-            unstuffedBuffer.push_back(bit);
-          } else if (bit == 1) {
-            consecutiveOnes++;
-            unstuffedBuffer.push_back(bit);
-          } else {
-            consecutiveOnes = 0;
-          }
-        }
-        Serial.println("Unstuffed:");
-        printBuffer(unstuffedBuffer, unstuffedBuffer.size());
-      } else {
-        printBuffer(dataBuffer, messagesize);
-      }
+      printBuffer(dataBuffer, messagesize);
     }
     insideState = insideState == 0 ? 1 : 0;
     boundaryAge = 0;
