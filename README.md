@@ -9,9 +9,9 @@ So it now has:
 - reporting/control using MQTT.
 - extended zone reporting for upto 16 zones.
 - ability to report the alarm status, including the zone that triggered the alarm.
-- possibility to activate 3 relays to activate/deactivate the alarm by simulating keyswitches.
 - bidirectional communication:
   - now it's possible to activate and deactivate the alarm just by using the bus without keyswitches.
+- possibility to activate 3 relays to activate/deactivate the alarm by simulating keyswitches.
 - OTA updates using ArduinoOTA.
 
 I had some help from ChatGPT, but to be truthfull it made a LOT of mistakes and it took me an absurdely long time to correct the parts of the code it provided and find out its mistakes...
