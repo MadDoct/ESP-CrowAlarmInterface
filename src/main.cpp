@@ -163,7 +163,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             client.publish(mqttTopic, message);
             Serial.print(message);
             Serial.println();
-            status = 3;
+            status = 3; //Alarm triggered
             publishStatus(status);
             EEPROM.put(statusAddress, status);
             EEPROM.commit(); // Commit the changes to EEPROM
@@ -173,9 +173,6 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
         if (buffer[statu1] == 1 && buffer[statu2] == 1 && buffer[statu3] == 1) { //triggered activelly
           status = 3;
           Serial.println("Disparado activamente");
-        } else if (buffer[statu1] == 1 && buffer[statu2] == 0 && buffer[statu3] == 1) { //disarm successful
-          status = 0;
-          Serial.println("Desarmado");
         } else if (buffer[parcial] == 1) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
           if (buffer[jaarmado] == 0) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
             Serial.println("A armar Parcial");
@@ -192,6 +189,9 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             Serial.println("Armado Total");
             status = 1;
           }
+        } else if (buffer[statu1] == 0) { //disarm successful
+          status = 0;
+          Serial.println("Desarmado");
         }
         publishStatus(status);
         //prevent unnecessary writting to flash
