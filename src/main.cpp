@@ -8,14 +8,14 @@
 #include <Arduino.h>
 #include <deque>
 #include <ESP8266WiFi.h>
+#include <ArduinoOTA.h>
 #include <PubSubClient.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
-#include <ArduinoOTA.h>
 
 #define WDT_TIMEOUT_S 8 // Set the WDT timeout to 8 seconds
 
-int statusAddress = 0;
+const int statusAddress = 0;
 byte status = 0;
 byte statussaved = 0;
 
@@ -138,7 +138,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
       int statusrep = inicio + 63;
       int statu1 = inicio + 24;
       int statu2 = inicio + 25;
-      int statu3 = inicio + 26;
+      int statu3 = inicio + 27;
       int jaarmado = inicio + 26;
       int total = inicio + 48;
       int parcial = inicio + 56;
@@ -169,7 +169,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             EEPROM.commit(); // Commit the changes to EEPROM
           }
         }
-      } else {
+      } else { //handle status messages
         if (buffer[statu1] == 1 && buffer[statu2] == 1 && buffer[statu3] == 1) { //triggered activelly
           status = 3;
           Serial.println("Disparado activamente");
@@ -244,18 +244,14 @@ void IRAM_ATTR clockCallback() {
     dataBuffer.pop_front();
   }
 
-  int lastIndex = bufferSize - 1;
-
-  if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 1 && 
-      dataBuffer[lastIndex - 1] == 1 && dataBuffer[lastIndex - 2] == 1 && 
-      dataBuffer[lastIndex - 3] == 1 && dataBuffer[lastIndex - 4] == 1 && 
-      dataBuffer[lastIndex - 5] == 1 && dataBuffer[lastIndex - 6] == 1 && 
-      dataBuffer[lastIndex - 7] == 1 && dataBuffer[lastIndex - 8] == 1 && 
-      dataBuffer[lastIndex - 9] == 1 && insideState == 0) {
+  if (consecutiveOnes >= 10 && insideState == 0) {
+    consecutiveOnes = 10; //prevent from increasing too much
     cansend = true;
   } else {
     cansend = false;
   }
+
+  int lastIndex = bufferSize - 1;
 
   if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 0 && 
       dataBuffer[lastIndex - 1] == 1 && dataBuffer[lastIndex - 2] == 1 && 
@@ -393,6 +389,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
       client.publish(logTopic, "Alarme despoletado activamente");
       sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
       sendBinaryPacket(32);
+    } else if (receivedPayload == "actualizar") {
+      client.publish(logTopic, "Actualizar...");
+      sendBinaryPacket(1);
+      sendBinaryPacket(17);
     //receive the code after "desarmar-" or "desarmar " and send it to the alarm to deactivate it
     } else if (receivedPayload.startsWith("desarmar-") || receivedPayload.startsWith("desarmar ")) {
       sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
@@ -473,7 +473,7 @@ void setup() {
   EEPROM.begin(1); // Initialize EEPROM with the number of bytes needed
   EEPROM.get(statusAddress, statussaved);
 
-  if (statussaved >= 0 && statussaved <= 5) { // Ensure it's a valid value (greater than or equal to 1 and smaller or equal to 3)
+  if (statussaved >= 0 && statussaved <= 5) { // Ensure it's a valid value (greater than or equal to 1 and smaller or equal to 5)
     if (statussaved >= 4){
       status = statussaved - 3;
     } else {
@@ -548,6 +548,10 @@ void setup() {
 
   // Start OTA
   ArduinoOTA.begin();
+
+  // Get alarm status
+  sendBinaryPacket(1);
+  sendBinaryPacket(17);
 }
 
 void loop() {
