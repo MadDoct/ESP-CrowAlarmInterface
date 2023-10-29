@@ -174,7 +174,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           status = 3;
           Serial.println("Disparado activamente");
         } else if (buffer[parcial] == 1) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
-          if (buffer[jaarmado] == 0) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
+          if (buffer[jaarmado] == 0 && status != 2) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
             Serial.println("A armar Parcial");
             status = 5;
           } else {
@@ -182,7 +182,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             status = 2;
           }
         } else if (buffer[total] == 1) {
-          if (buffer[jaarmado] == 0) {
+          if (buffer[jaarmado] == 0 && status != 1) {
             Serial.println("A armar Total");
             status = 4;
           } else {
