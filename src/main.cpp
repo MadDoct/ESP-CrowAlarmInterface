@@ -59,7 +59,6 @@ int insideState = 1;
 int consecutiveOnes = 0;
 int boundaryAge = 0;
 bool cansend = false;
-bool actualped = false;
 // Define the size of the binary array in bytes
 const int binarySizeBytes = 1;  // 8 bits
 
@@ -175,7 +174,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           status = 3;
           Serial.println("Disparado activamente");
         } else if (buffer[parcial] == 1) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
-          if (buffer[jaarmado] == 0 && !actualped) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
+          if (buffer[jaarmado] == 0 && statu2 == 0) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
             Serial.println("A armar Parcial");
             status = 5;
           } else {
@@ -183,7 +182,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             status = 2;
           }
         } else if (buffer[total] == 1) {
-          if (buffer[jaarmado] == 0 && !actualped) {
+          if (buffer[jaarmado] == 0 && statu2 == 0) {
             Serial.println("A armar Total");
             status = 4;
           } else {
@@ -201,7 +200,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
           EEPROM.put(statusAddress, status);
           EEPROM.commit(); // Commit the changes to EEPROM
         }
-        actualped = false;
+        
       }
       if (activeZoneDetected && zonedata) {
         String hexValue = "";
@@ -392,7 +391,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
       sendBinaryPacket(32);
     } else if (receivedPayload == "actualizar") {
       client.publish(logTopic, "Actualizar...");
-      actualped = true;
       sendBinaryPacket(1);
       sendBinaryPacket(17);
     //receive the code after "desarmar-" or "desarmar " and send it to the alarm to deactivate it
@@ -550,9 +548,8 @@ void setup() {
 
   // Start OTA
   ArduinoOTA.begin();
-
-  // Get alarm status
-  actualped = true;
+  
+  //Get alarm status
   sendBinaryPacket(1);
   sendBinaryPacket(17);
 }
