@@ -228,11 +228,17 @@ void IRAM_ATTR clockCallback() {
     return;
   }
   int dbit = digitalRead(dataPin);
+  bool boundaryfound = false;
   if (dbit == 1) {
     dataBuffer.push_back(dbit);
     boundaryAge++;
     consecutiveOnes++;
   } else if (dbit == 0 && consecutiveOnes == 5) {
+    consecutiveOnes = 0;
+  } else if (dbit == 0 && consecutiveOnes == 6) {
+    dataBuffer.push_back(dbit);
+    boundaryAge++;
+    boundaryfound = true;
     consecutiveOnes = 0;
   } else {
     dataBuffer.push_back(dbit);
@@ -251,13 +257,7 @@ void IRAM_ATTR clockCallback() {
     cansend = false;
   }
 
-  int lastIndex = bufferSize - 1;
-
-  if (dataBuffer.size() == bufferSize && dataBuffer[lastIndex] == 0 && 
-      dataBuffer[lastIndex - 1] == 1 && dataBuffer[lastIndex - 2] == 1 && 
-      dataBuffer[lastIndex - 3] == 1 && dataBuffer[lastIndex - 4] == 1 && 
-      dataBuffer[lastIndex - 5] == 1 && dataBuffer[lastIndex - 6] == 1 && 
-      dataBuffer[lastIndex - 7] == 0) {
+  if (dataBuffer.size() == bufferSize && boundaryfound) {
     if (insideState == 1) {
       int messagesize = boundaryAge + boundaryLen;
       printBuffer(dataBuffer, messagesize);
@@ -393,6 +393,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
       client.publish(logTopic, "Actualizar...");
       sendBinaryPacket(1);
       sendBinaryPacket(17);
+    } else if (receivedPayload == "enter") {
+      client.publish(logTopic, "enter");
+      sendBinaryPacket(17);
+    } else if (receivedPayload == "1") {
+      client.publish(logTopic, "1");
+      sendBinaryPacket(1);
     //receive the code after "desarmar-" or "desarmar " and send it to the alarm to deactivate it
     } else if (receivedPayload.startsWith("desarmar-") || receivedPayload.startsWith("desarmar ")) {
       sendBinaryPacket(17); //Send "enter" at the beggining to "wake up the system"
