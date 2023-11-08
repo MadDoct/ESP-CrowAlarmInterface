@@ -8,6 +8,7 @@ mqtt:
       payload_on: 1
       off_delay: 5
       value_template: "{{ value.split(' ')[0] }}"
+      force_update: true
       availability_topic: "Alarm/lwt"
       payload_available: "Online"
       payload_not_available: "Offline"
@@ -18,6 +19,7 @@ mqtt:
       payload_on: 2
       off_delay: 5
       value_template: "{{ value.split(' ')[0] }}"
+      force_update: true
       availability_topic: "Alarm/lwt"
       payload_available: "Online"
       payload_not_available: "Offline"
