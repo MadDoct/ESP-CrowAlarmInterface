@@ -3,6 +3,7 @@ mqtt:
   binary_sensor:
     - name: "Zone 1"
       unique_id: alarmzone1
+      device_class: motion
       state_topic: "Alarm/active_zones"
       payload_on: 1
       off_delay: 5
@@ -12,6 +13,7 @@ mqtt:
       payload_not_available: "Offline"
     - name: "Zone 2"
       unique_id: alarmzone2
+      device_class: motion
       state_topic: "Alarm/active_zones"
       payload_on: 2
       off_delay: 5
