@@ -1,0 +1,21 @@
+#example of mqtt binary sensors to have motion sensors in HA
+mqtt:
+  binary_sensor:
+    - name: "Zone 1"
+      unique_id: alarmzone1
+      state_topic: "Alarm/active_zones"
+      payload_on: 1
+      off_delay: 5
+      value_template: "{{ value.split(' ')[0] }}"
+      availability_topic: "Alarm/lwt"
+      payload_available: "Online"
+      payload_not_available: "Offline"
+    - name: "Zone 2"
+      unique_id: alarmzone2
+      state_topic: "Alarm/active_zones"
+      payload_on: 2
+      off_delay: 5
+      value_template: "{{ value.split(' ')[0] }}"
+      availability_topic: "Alarm/lwt"
+      payload_available: "Online"
+      payload_not_available: "Offline"
