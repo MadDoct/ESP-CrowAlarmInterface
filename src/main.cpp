@@ -42,11 +42,11 @@ const char* teleTopic = "Alarm/tele"; //Topic for the telemetry
 
 const char* resetCause;
 
-const int clockPin = D5;
-const int dataPin = D6;
+const int clockPin = D6;
+const int dataPin = D7;
 const int parcialPin = D1;
 const int totalPin = D2;
-const int alarmePin = D7;
+const int alarmePin = D5;
 
 const int boundaryLen = 8;
 const int bufferSize = 128;
