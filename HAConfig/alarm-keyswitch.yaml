@@ -4,6 +4,7 @@ mqtt:
       unique_id: crowalarm
       code_arm_required: false
       state_topic: Alarm/status
+      supported_features: ["arm_away", "arm_night", "trigger"]
       value_template: >-
         {% if value == "Desarmado" %} disarmed
         {% elif value == "Armado Total" %} armed_away
