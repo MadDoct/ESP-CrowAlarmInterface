@@ -12,6 +12,7 @@ mqtt:
         {% elif value == "A armar Total" %} arming
         {% elif value == "A armar Parcial" %} arming
         {% elif value == "Alarme Despoletado" %} triggered
+        {% elif value == "Chime" %} pending
         {% else %} disarmed
         {% endif %}
       command_topic: Alarm/control
