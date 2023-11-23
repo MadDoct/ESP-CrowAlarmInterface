@@ -163,32 +163,40 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             client.publish(mqttTopic, message);
             Serial.print(message);
             Serial.println();
-            status = 3; //Alarm triggered
-            publishStatus(status);
-            EEPROM.put(statusAddress, status);
-            EEPROM.commit(); // Commit the changes to EEPROM
+            activeZoneDetected = true;
           }
         }
       } else { //handle status messages
-        if (buffer[statu1] == 1 && buffer[statu2] == 1 && buffer[statu3] == 1) { //triggered activelly
-          status = 3;
-          Serial.println("Disparado activamente");
-        } else if (buffer[parcial] == 1) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
-          if (buffer[jaarmado] == 0 && statu2 == 0) { //bit 31 is 1 when the alarm is being armed (the keypad is chimming))
-            Serial.println("A armar Parcial");
-            status = 5;
+        if (buffer[statu1] == 1 && buffer[statu2] == 1 && buffer[statu3] == 1) { //triggered
+          if (buffer[jaarmado] == 1) {
+            status = 3;
+            Serial.println("Disparado");
           } else {
+            status = 4;
+            Serial.println("Chime");
+          }
+        } else if (buffer[statu1] == 1 && buffer[statu2] == 0 && buffer[jaarmado] == 1) { //disarmed
+            status = 0;
+            Serial.println("Desarmado");
+        } else if (buffer[parcial] == 1 && status != 3) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
+          if ((buffer[statu2] == 0 && buffer[jaarmado] == 1) || (buffer[statu1] == 1 && buffer[statu3] == 0)) {
             Serial.println("Armado Parcial");
             status = 2;
+          } else if (status != 2) {
+            Serial.println("A armar Parcial");
+            status = 6;
           }
-        } else if (buffer[total] == 1) {
-          if (buffer[jaarmado] == 0 && statu2 == 0) {
-            Serial.println("A armar Total");
-            status = 4;
-          } else {
+        } else if (buffer[total] == 1 && status != 3) {
+          if ((buffer[statu2] == 0 && buffer[jaarmado] == 1) || (buffer[statu1] == 1 && buffer[statu3] == 0)) {
             Serial.println("Armado Total");
             status = 1;
+          } else if (status != 1) {
+            Serial.println("A armar Total");
+            status = 5;
           }
+        } else if (status != 3) { //disarmed
+          status = 0;
+          Serial.println("Desarmado");
         } else if (buffer[statu1] == 0) { //disarm successful
           status = 0;
           Serial.println("Desarmado");
@@ -479,9 +487,9 @@ void setup() {
   EEPROM.begin(1); // Initialize EEPROM with the number of bytes needed
   EEPROM.get(statusAddress, statussaved);
 
-  if (statussaved >= 0 && statussaved <= 5) { // Ensure it's a valid value (greater than or equal to 1 and smaller or equal to 5)
-    if (statussaved >= 4){
-      status = statussaved - 3;
+  if (statussaved >= 0 && statussaved <= 6) { // Ensure it's a valid value (greater than or equal to 1 and smaller or equal to 5)
+    if (statussaved >= 5){
+      status = statussaved - 4;
     } else {
       status = statussaved;
     }
