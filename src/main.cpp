@@ -98,9 +98,12 @@ void publishStatus(byte estado) {
         client.publish(mqttStateTopic, "Alarme Despoletado", true);
         break;
       case 4:
-        client.publish(mqttStateTopic, "A armar Total", true);
+        client.publish(mqttStateTopic, "Chime", true);
         break;
       case 5:
+        client.publish(mqttStateTopic, "A armar Total", true);
+        break;
+      case 6:
         client.publish(mqttStateTopic, "A armar Parcial", true);
         break;
     }
