@@ -342,7 +342,7 @@ void sendPacket(const byte* binaryData, size_t dataSize) {
 
   // Restart receiving
   //attachInterrupt(digitalPinToInterrupt(clockPin), clockCallback, FALLING);
-  delay(1);
+  delay(50);
 }
 
 // Function to send keypad button presses
