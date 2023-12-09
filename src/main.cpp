@@ -182,7 +182,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             status = 0;
             Serial.println("Desarmado");
         } else if (buffer[parcial] == 1 && status != 3) { //bit 56 is 1 when the alarm is armed partially and 0 if totally
-          if ((buffer[statu2] == 0 && buffer[jaarmado] == 1) || (buffer[statu1] == 1 && buffer[statu3] == 0)) {
+          if ((buffer[statu2] == 0 && buffer[jaarmado] == 1) || (buffer[statu1] == 1 && buffer[statu3] == 0 && status != 6)) {
             Serial.println("Armado Parcial");
             status = 2;
           } else if (status != 2) {
@@ -190,7 +190,7 @@ void printBuffer(const std::deque<int>& buffer, unsigned int length) {
             status = 6;
           }
         } else if (buffer[total] == 1 && status != 3) {
-          if ((buffer[statu2] == 0 && buffer[jaarmado] == 1) || (buffer[statu1] == 1 && buffer[statu3] == 0)) {
+          if ((buffer[statu2] == 0 && buffer[jaarmado] == 1) || (buffer[statu1] == 1 && buffer[statu3] == 0 && status != 5)) {
             Serial.println("Armado Total");
             status = 1;
           } else if (status != 1) {
