@@ -240,22 +240,20 @@ void IRAM_ATTR clockCallback() {
   }
   int dbit = digitalRead(dataPin);
   bool boundaryfound = false;
-  if (dbit == 1) {
-    dataBuffer.push_back(dbit);
-    boundaryAge++;
-    consecutiveOnes++;
-  } else if (dbit == 0 && consecutiveOnes == 5) {
-    consecutiveOnes = 0;
-  } else if (dbit == 0 && consecutiveOnes == 6) {
-    dataBuffer.push_back(dbit);
-    boundaryAge++;
-    boundaryfound = true;
-    consecutiveOnes = 0;
-  } else {
-    dataBuffer.push_back(dbit);
-    boundaryAge++;
-    consecutiveOnes = 0;
-  }
+    if (dbit == 1) {
+      dataBuffer.push_back(dbit);
+      boundaryAge++;
+      consecutiveOnes++;
+    } else {
+      if (consecutiveOnes == 6) {
+        boundaryfound = true;
+      }
+      if (consecutiveOnes != 5) {
+        dataBuffer.push_back(dbit);
+        boundaryAge++;
+      }
+      consecutiveOnes = 0;
+    }
 
   if (dataBuffer.size() > bufferSize) {
     dataBuffer.pop_front();
@@ -269,6 +267,9 @@ void IRAM_ATTR clockCallback() {
   }
 
   if (dataBuffer.size() == bufferSize && boundaryfound) {
+    if (boundaryAge % 8 != 0) {
+      insideState = 0;
+    }
     if (insideState == 1) {
       int messagesize = boundaryAge + boundaryLen;
       printBuffer(dataBuffer, messagesize);
