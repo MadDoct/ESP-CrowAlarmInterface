@@ -29,6 +29,6 @@ There are 2 different config files for Home Assistant that use the MQTT Alarm Co
 To control the alarm using the bus, sen the following payloads to the control topic (usually Alarm/control):
 To arm away - total
 To arm night - parcial
-to disarm (replace xxxx with your usual code) - disarm-xxxx
+to disarm (replace xxxx with your usual code) - desarmar-xxxx
 
 DISCLAIMER: This has been tested in my alarm and probably works with all the alarms of the same model, but due to possible differences in firmware or configuration of the alarm, your mileage may vary...
