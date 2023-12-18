@@ -26,7 +26,7 @@ There are 2 different config files for Home Assistant that use the MQTT Alarm Co
 - alarm-bus.yaml should be used in case you are using the bus to control the alarm (with logic level converters);
 - alarm-keyswitch.yaml should be used in case you are using the keyswitches to control the alarm (with voltage dividers and relays simulating keyswitches).
 
-To control the alarm using the bus, sen the following payloads to the control topic (usually Alarm/control) (If you use Home Assistant, just use the configuration available in the folder HAConfig):
+To control the alarm using the bus, send the following payloads to the control topic (usually Alarm/control) (If you use Home Assistant, just use the configuration available in the folder HAConfig):
 - To arm away - total
 - To arm night - parcial
 - To disarm (replace xxxx with your usual code) - desarmar-xxxx
