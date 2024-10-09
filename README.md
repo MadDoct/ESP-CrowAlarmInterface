@@ -18,7 +18,7 @@ I had some help from ChatGPT, but to be truthfull it made a LOT of mistakes and 
 
 Some strings are in Portuguese - my native language - sorry for that. I will probably "correct" that in the future.
 
-Pinout: Initially converted CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a resistor divider connected to GPIO pins D5, D6 for Esp8266.. Then I started using a logic level converter instead of the voltage dividers to allow for bidirectional communication.
+Pinout: Initially converted CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a resistor divider connected to GPIO pins D6, D7 for Esp8266.. Then I started using a logic level converter instead of the voltage dividers to allow for bidirectional communication.
 Also connected crow NEG to Esp8266 GND.
 Pins D1, D2 and D7 can be connected to relays that get activated for 1 second, activating/disarming the alarm by simulating keyswitches (refer to the alarm manual on how to use this), if you rather use this instead of the bus communication.
 
