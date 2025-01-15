@@ -624,7 +624,7 @@ void loop() {
     StaticJsonDocument<128> jsonDoc;
     // Add the uptime, RSSI and IP values to the JSON object
     jsonDoc["Uptime"] = String(uptimeStr);
-    jsonDoc["IP"] = WiFi.localIP();
+    jsonDoc["IP"] = WiFi.localIP().toString();
     jsonDoc["RSSI"] = WiFi.RSSI();
   
     // Serialize the JSON object to a string
