@@ -1,5 +1,5 @@
 // Read active zone and status and control a Crow Runner 8/16 Alarm System
-// Pinout option 1: Convert CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a logic level converter connected to GPIO pins D5, D6 of the Esp8266
+// Pinout option 1: Convert CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a logic level converter connected to GPIO pins D6, D7 of the Esp8266
 //if you want to use just the bus.
 // Pinout option 2: Convert CROW 5V clock (CLK) and data (DAT) keypad signals to 3.3V with a resistor divider connected to GPIO pins D5, D6 of the Esp8266
 //if you only want reporting or want control using relays and keyswitch simulation.
